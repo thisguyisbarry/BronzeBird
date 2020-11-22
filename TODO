@@ -1,6 +1,5 @@
 TODO: 
 Character Creation Page
-Login/Register Page
 Database for hosting user and character information
 User authentication
 Change password request
@@ -8,11 +7,3 @@ Display and search created characters
 Upload for character picture
 Documentation
 Quash bugs
-
-
-Fulfilled by Kevin:
-Bug Quash Count: 1
-
-Fulfilled by Barry: 
-Bug Quash Count: 0
-Landing Page

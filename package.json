@@ -1,0 +1,24 @@
+{
+  "name": "project-bronzebird",
+  "version": "1.0.0",
+  "description": "",
+  "main": "database.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thisguyisbarry/Project-BronzeBird.git"
+  },
+  "author": "thisguyisbarry",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thisguyisbarry/Project-BronzeBird/issues"
+  },
+  "homepage": "https://github.com/thisguyisbarry/Project-BronzeBird#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "express-validator": "^6.6.1",
+    "sqlite3": "^5.0.0"
+  }
+}
