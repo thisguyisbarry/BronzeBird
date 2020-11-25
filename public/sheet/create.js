@@ -14,7 +14,7 @@ $('#characterForm').validate({
         },
         characterAlignment: {
             required: true
-        }
+        },
     },
     submitHandler: createAjaxPostCharacter
 });
