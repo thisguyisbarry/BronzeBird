@@ -6,17 +6,62 @@ const session = require('express-session');
 const app = express();
 const { body, validationResult } = require('express-validator');
 
-// passport
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-
 //bodyparser
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true }));
 
-// bycrypt
+// bcrypt
 const bcrypt = require('bcrypt');
+const saltrounds = 10;
+
+// passport
+const passport = require('passport');
+const { contextsKey } = require('express-validator/src/base');
+const LocalStrategy = require('passport-local').Strategy;
+
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(
+    function (username, password, done) {
+        // select username and password from database
+        const userQuery = db.prepare('SELECT username, password FROM Users WHERE username = $1;');
+        userQuery.get(username, function(err, row) {
+            if (err) {
+                return done(err);
+            }
+            if (!row) {
+                return done(null, false, { message: 'User not found.' });
+            }
+
+            // compare username enmcrypted password
+            bcrypt.compare(password, row.password, function(err, result) {
+                if (result) {
+                    return done(null, row);
+                }
+                else {
+                    return done(null, false, { message: 'Incorrect password'})
+                }
+            });
+        });
+    }
+));
+
+passport.serializeUser(function (user, done) {
+    return done(null, user.username);
+});
+
+passport.deserializeUser(function(id, done) {
+    const query = db.prepare('SELECT username FROM Users WHERE username = $1;');
+    query.get(username, function(err, row) {
+        if (!row) {
+            return done(null, false);
+        }
+        else {
+            return done(err, row);
+        }
+    });
+});
 
 // sql consts
 const insertCharacter = 'INSERT INTO Characters (characterName, characterRace, characterClass, characterLevel, characterAlignment) VALUES ($1, $2, $3, $4, $5);';
@@ -104,30 +149,30 @@ app.post('/register', [
     const errors = validationResult(req);
 
     if (errors.isEmpty()) { // if the email, username and password are valid
-        email = req.body.email;
-        username = req.body.username;
-        password = req.body.password;
+        const email = req.body.email;
+        const username = req.body.username;
+        const password = req.body.password;
 
         // check if email is already registered
-        const emailQuery = db.prepare('SELECT Email FROM Users WHERE Email = $1;');
+        const emailQuery = db.prepare('SELECT email FROM Users WHERE email = $1;');
         emailQuery.get(email, function(err, row) {
             if (row) {
                 console.log("There is already a user registered with this email");
-                return;
+                return done(null, false);
             }
         })
 
         // check if username is taken
-        const userQuery = db.prepare('SELECT Username FROM Users WHERE Username = $1;');
+        const userQuery = db.prepare('SELECT username FROM Users WHERE username = $1;');
         userQuery.get(username, function(err, row) {
             if (row) {
                 console.log("This username is not available");
-                return;
+                return done(null, false);
             }
         })
 
         // insert email, username and encrypted password into database
-        bcrypt.hash(password, 10, function(err, hash) {
+        bcrypt.hash(password, saltrounds, function(err, hash) {
             const insert = db.prepare('INSERT INTO Users (email, username, password) VALUES ($1, $2, $3);');
             insert.run(email, username, hash);
             insert.finalize();
@@ -153,33 +198,6 @@ app.post('/login', function(req, res, next) {
         failureFlash: true 
     });
 });
-
-app.use(passport.initialize());
-app.use(passport.session());
-passport.use(new LocalStrategy(
-    function (username, password, done) {
-        // select username aand password from database
-        const query = db.prepare('SELECT Username, Password FROM Users WHERE Username = $1;');
-        query.get(username, function (err, row) {
-            if (err) {
-                return done(err);
-            }
-            if (!row) {
-                return done(null, false, { message: 'User not found.' });
-            }
-            // compare username enmcrypted password
-            bcrypt.compare(password, row.password, function (err, result) {
-                if (result == true) {
-                    console.log("Login successful");
-                    done(null, { username: row.username });
-                } else {
-                    console.log("Login failed");
-                    return done(null, false, { message: 'Incorrect password' });
-                }
-            });
-        });
-    }
-));
 
 
 
