@@ -9,6 +9,8 @@ const { body, validationResult } = require('express-validator');
 // passport
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+// app.serializeUser
+// app.deserializeUser
 app.use(passport.initialize());
 app.use(passport.session());
 
