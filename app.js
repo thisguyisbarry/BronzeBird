@@ -9,10 +9,44 @@ const { body, validationResult } = require('express-validator');
 // passport
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-// app.serializeUser
-// app.deserializeUser
 app.use(passport.initialize());
 app.use(passport.session());
+
+passport.use(new LocalStrategy(
+    function (username, password, done) {
+        // select username aand password from database
+        const query = db.prepare('SELECT Username, Password FROM Users WHERE Username = $1;');
+        query.get(username, function (err, row) {
+            if (err) {
+                return done(err);
+            }
+            if (!row) {
+                return done(null, false, { message: 'User not found.' });
+            }
+            // compare username enmcrypted password
+            bcrypt.compare(password, row.password, function (err, result) {
+                if (result == true) {
+                    console.log("Login successful");
+                    done(null, { username: row.username });
+                } else {
+                    console.log("Login failed");
+                    return done(null, false, { message: 'Incorrect password' });
+                }
+            });
+        });
+    }
+));
+
+passport.serializeUser(function (user, done) {
+    return done(null, user.username);
+});
+
+passport.deserializeUser(function(username, done) {
+    const query = db.prepare('SELECT Username FROM Users WHERE Username = $1;');
+    query.get(username, function(err, row) {
+        done(err, row);
+    });
+});
 
 //bodyparser
 const bodyParser = require('body-parser');
