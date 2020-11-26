@@ -63,6 +63,9 @@ passport.deserializeUser(function(id, done) {
     });
 });
 
+
+app.use(express.static("public"));
+
 // sql consts
 const insertCharacter = 'INSERT INTO Characters (characterName, characterRace, characterClass, characterLevel, characterAlignment) VALUES ($1, $2, $3, $4, $5);';
 const selectCharacters = "SELECT characterID, characterName, characterRace, characterClass, characterLevel, characterAlignment FROM Characters;";
@@ -72,7 +75,7 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
 
-app.use(express.static("public"));
+
 
 
 app.get("/", function(req, res) {
@@ -102,7 +105,7 @@ app.post("/submitCharacter", [
         const characterAlignment = req.body.characterAlignment;
         console.log(`${characterName}, ${characterRace}, ${characterClass}, ${characterLevel}, ${characterAlignment}`);
 
-        const insert =db.prepare(insertCharacter);
+        const insert = db.prepare(insertCharacter);
         insert.run(characterName, characterRace, characterClass, characterLevel, characterAlignment);
         insert.finalize();
 
