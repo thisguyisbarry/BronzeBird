@@ -4,6 +4,8 @@ const db = new sqlite3.Database('./database/bronzebird.db');
 const express = require('express');
 const session = require('express-session');
 const app = express();
+app.use(express.static('public'));
+
 const { body, validationResult } = require('express-validator');
 
 //bodyparser
@@ -62,9 +64,6 @@ passport.deserializeUser(function(id, done) {
         }
     });
 });
-
-
-app.use(express.static("public"));
 
 // sql consts
 const insertCharacter = 'INSERT INTO Characters (characterName, characterRace, characterClass, characterLevel, characterAlignment) VALUES ($1, $2, $3, $4, $5);';
@@ -203,10 +202,9 @@ app.post('/login', function(req, res, next) {
 });
 
 
-
-
-
-
+app.get('/login', function(req, res) {
+    res.sendFile(__dirname + "/public/user/login.html");
+});
 
 /*  MUST BE AT END OF GETS
     Takes any undefined path
