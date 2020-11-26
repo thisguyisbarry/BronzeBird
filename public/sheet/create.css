@@ -38,3 +38,7 @@ body {
 .characterform .btn{
     align-items: right;
 }
+
+.error {
+    color: red;
+ }

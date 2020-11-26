@@ -9,6 +9,8 @@ const { body, validationResult } = require('express-validator');
 // passport
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+app.use(passport.initialize());
+app.use(passport.session());
 
 //bodyparser
 const bodyParser = require('body-parser');
@@ -17,6 +19,9 @@ app.use(bodyParser.urlencoded({extended: true }));
 
 // bycrypt
 const bcrypt = require('bcrypt');
+
+
+app.use(express.static("public"));
 
 // sql consts
 const insertCharacter = 'INSERT INTO Characters (characterName, characterRace, characterClass, characterLevel, characterAlignment) VALUES ($1, $2, $3, $4, $5);';
@@ -27,7 +32,7 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
 
-app.use(express.static("public"));
+
 
 
 app.get("/", function(req, res) {
@@ -57,7 +62,7 @@ app.post("/submitCharacter", [
         const characterAlignment = req.body.characterAlignment;
         console.log(`${characterName}, ${characterRace}, ${characterClass}, ${characterLevel}, ${characterAlignment}`);
 
-        const insert =db.prepare(insertCharacter);
+        const insert = db.prepare(insertCharacter);
         insert.run(characterName, characterRace, characterClass, characterLevel, characterAlignment);
         insert.finalize();
 
@@ -154,8 +159,6 @@ app.post('/login', function(req, res, next) {
     });
 });
 
-app.use(passport.initialize());
-app.use(passport.session());
 passport.use(new LocalStrategy(
     function (username, password, done) {
         // select username aand password from database
