@@ -81,6 +81,9 @@ app.get("/", function(req, res) {
     res.sendFile(__dirname + "/public/index.html");
 });
 
+app.get("/create", function(req, res) {
+    res.sendFile(__dirname + "/public/sheet/create.html");
+});
 
 app.post("/submitCharacter", [
         body('characterName'),
@@ -126,9 +129,22 @@ app.post("/submitCharacter", [
 
 });
 
+app.get("/saved", function(req, res){
+    res.sendFile(__dirname + "/public/saved/saved.html");
+});
+
+app.get("/login", function(req, res){
+    res.sendFile(__dirname + "/public/user/login.html");
+});
+
 /**
  * Register
  */
+
+app.get("/register", function(req, res) {
+    res.sendFile(__dirname + "/public/user/register.html");
+});
+
 app.post('/register', [
     // email validation
     body('email')

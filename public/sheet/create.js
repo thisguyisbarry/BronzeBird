@@ -25,7 +25,7 @@ function createAjaxPostCharacter(){
         characterRace:       $('#characterRace')[0].value,
         characterClass:      $('#characterClass')[0].value,
         characterLevel:      $('#characterLevel')[0].value,
-        characterAlignment:  $('#characterAlignment')[0].value,
+        characterAlignment:  $('#characterAlignment')[0].value
     }
     const post = $.post('http://localhost:3001/submitCharacter', data);
     post.done(processResults);
