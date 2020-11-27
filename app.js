@@ -36,7 +36,7 @@ passport.use(new LocalStrategy(
                 return done(null, false, { message: 'User not found.' });
             }
 
-            // compare username enmcrypted password
+            // compare username encrypted password
             bcrypt.compare(password, row.password, function(err, result) {
                 if (result) {
                     return done(null, row);
@@ -73,9 +73,6 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });
-
-
-
 
 app.get("/", function(req, res) {
     res.sendFile(__dirname + "/public/index.html");
@@ -133,9 +130,6 @@ app.get("/saved", function(req, res){
     res.sendFile(__dirname + "/public/saved/saved.html");
 });
 
-app.get("/login", function(req, res){
-    res.sendFile(__dirname + "/public/user/login.html");
-});
 
 /**
  * Register
@@ -175,7 +169,6 @@ app.post('/register', [
         const emailQuery = db.prepare('SELECT email FROM Users WHERE email = $1;');
         emailQuery.get(email, function(err, row) {
             if (row) {
-                console.log("There is already a user registered with this email");
                 return done(null, false);
             }
         })
@@ -184,7 +177,6 @@ app.post('/register', [
         const userQuery = db.prepare('SELECT username FROM Users WHERE username = $1;');
         userQuery.get(username, function(err, row) {
             if (row) {
-                console.log("This username is not available");
                 return done(null, false);
             }
         })
@@ -196,7 +188,7 @@ app.post('/register', [
             insert.finalize();
         });
 
-        console.log("Successfully registered");
+        console.log(`\nNew user created\n\tEmail: ${email}\n\tUsername: ${username}`);
     }
     else {
         return res.status(400).json({ errors: errors.array() });
@@ -207,8 +199,12 @@ app.post('/register', [
 /**
  * Login
  */
+
+app.get('/login', function(req, res) {
+    res.sendFile(__dirname + "/public/user/login.html");
+});
+
 app.post('/login', function(req, res, next) {
-    console.log("login");
     // passport local authentication
     passport.authenticate('local', { 
         successRedirect: '/',
@@ -217,10 +213,6 @@ app.post('/login', function(req, res, next) {
     });
 });
 
-
-app.get('/login', function(req, res) {
-    res.sendFile(__dirname + "/public/user/login.html");
-});
 
 /*  MUST BE AT END OF GETS
     Takes any undefined path
