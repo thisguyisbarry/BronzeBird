@@ -17,6 +17,8 @@ app.use(bodyParser.urlencoded({extended: true }));
 const bcrypt = require('bcrypt');
 const saltrounds = 10;
 
+const crypto = require('crypto');
+
 // passport
 const passport = require('passport');
 const { contextsKey } = require('express-validator/src/base');
@@ -36,7 +38,7 @@ passport.use(new LocalStrategy(
                 return done(null, false, { message: 'User not found.' });
             }
 
-            // compare username encrypted password
+            // compare password
             bcrypt.compare(password, row.password, function(err, result) {
                 if (result) {
                     return done(null, row);
@@ -171,7 +173,7 @@ app.post('/register', [
             if (row) {
                 return done(null, false);
             }
-        })
+        });
 
         // check if username is taken
         const userQuery = db.prepare('SELECT username FROM Users WHERE username = $1;');
@@ -179,7 +181,7 @@ app.post('/register', [
             if (row) {
                 return done(null, false);
             }
-        })
+        });
 
         // insert email, username and encrypted password into database
         bcrypt.hash(password, saltrounds, function(err, hash) {
@@ -193,7 +195,7 @@ app.post('/register', [
     else {
         return res.status(400).json({ errors: errors.array() });
     }
-})
+});
 
 
 /**
@@ -210,6 +212,66 @@ app.post('/login', function(req, res, next) {
         successRedirect: '/',
         failureRedirect: '/login',
         failureFlash: true 
+    });
+});
+
+
+/**
+ * Forgot Password
+ */
+
+app.get('/forgot-password', function(req, res) {
+    res.sendFile(__dirname + "/public/user/forgot-password.html");
+});
+
+app.post('/forgot-password', [
+    body('email').notEmpty()
+], function(req, res) {
+    const emailOrUsername = req.body.username;
+    const emailQuery = db.prepare('SELECT email, username FROM Users WHERE email = $1 OR username = $1');
+    emailQuery.get(emailOrUsername, function(err, row) {
+        if (err) {
+            return done(err);
+        }
+
+        if (row) {
+            const email = row.email;
+            const username = row.username;
+            token = crypto.randomBytes(32).toString('hex');
+            bcrypt.hash(token, saltrounds, function(err, hash) {
+                const tokenInsert = db.prepare('INSERT INTO PasswordResetRequests (email, token) VALUES ($1, $2);');
+                tokenInsert.run(row.email, hash);
+                tokenInsert.finalize();
+            });
+
+            //TODO send password reset email
+        }
+    });
+});
+
+app.get('/reset-password', [
+], function(req, res) {
+    res.sendFile(__dirname + "/public/user/reset-password.html");
+});
+
+app.post('/reset-password', [
+    body('token'),
+    body('username'),
+    body('password').isLength({ min: 8 })
+], function(req, res) {
+    const username = req.body.username;
+    const token = req.body.token;
+    const tokenQuery = db.prepare('SELECT token FROM PasswordResetRequests WHERE username = $1 AND expiryDate > datetime(\'now\') AND used = 0;');
+    tokenQuery.get(username, function(err, row) {
+        if (err) {
+            return done(err);
+        }
+
+        if (row) {
+            bcrypt.compare(token, row.token, function(err, res) {
+                //TODO
+            });
+        }
     });
 });
 
