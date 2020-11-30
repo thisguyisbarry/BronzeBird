@@ -25,3 +25,12 @@ body {
     background: #39342B;
     transition: background 500ms;
 }
+
+thead {
+    color: #A2ABAF;
+}
+
+#tableBody {
+    color: #A2ABAF;
+}
+

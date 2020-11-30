@@ -70,6 +70,8 @@ passport.deserializeUser(function(id, done) {
 // sql consts
 const insertCharacter = 'INSERT INTO Characters (characterName, characterRace, characterClass, characterLevel, characterAlignment) VALUES ($1, $2, $3, $4, $5);';
 const selectCharacters = "SELECT characterID, characterName, characterRace, characterClass, characterLevel, characterAlignment FROM Characters;";
+const deleteCharacter = 'DELETE FROM Characters WHERE characterID = $1;';
+
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
@@ -130,6 +132,40 @@ app.post("/submitCharacter", [
 
 app.get("/saved", function(req, res){
     res.sendFile(__dirname + "/public/saved/saved.html");
+});
+
+// TODO: Change to only get a user's characters
+app.get('/retrieveUserCharacters', function(req, res) {
+    const query = db.prepare(selectCharacters);
+    query.all(function(error, rows) {
+        if (error) {
+            console.log(error);
+            res.status(400).json(error);
+        } else {
+            res.status(200).json(rows);
+        }
+    });
+});
+
+app.post("/deleteCharacter", function(req, res) {
+    const characterID = parseInt(req.body.characterID);
+    const deleteStmt = db.prepare(deleteCharacter);
+    deleteStmt.run(characterID);
+    deleteStmt.finalize(function() {
+
+    });
+
+    const query = db.prepare(selectCharacters);
+    query.all(function(error, rows) {
+        if (error) {
+            console.log(error);
+            res.status(400).json(error);
+        } else {
+            console.log(rows);
+            res.status(200).json(rows);
+        }
+    });
+
 });
 
 
