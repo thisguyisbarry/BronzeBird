@@ -35,7 +35,7 @@ function buildCharacterTable(rows, status, xhr) {
         $(`<td> ${rows[i].characterAlignment}</td>`).appendTo(`#${trId}`);
         $(`<td><a id='delete${trId}' class='btn btn-link'>Delete</a></td>`).appendTo(`#${trId}`);
 
-        $(`#delete${trId}`).click(deleteInterest);
+        $(`#delete${trId}`).click(deleteCharacter);
     }
 }
 
@@ -48,10 +48,10 @@ function displayErrorCharacterTable(response, status, xhr) {
 }
 
 
-function deleteInterest() {
+function deleteCharacter() {
     const element = this.parentElement.parentElement;
     const data = {
-        interestId: element.children[0].innerText,
+        characterID: element.children[0].innerText,
     }
     const post = $.post('http://localhost:3001/deleteCharacter', data);
     post.done(processCharacterSuccess);
