@@ -207,7 +207,7 @@ app.post('/register', [
         const emailQuery = db.prepare('SELECT email FROM Users WHERE email = $1;');
         emailQuery.get(email, function(err, row) {
             if (row) {
-                return done(null, false);
+                return;
             }
         });
 
@@ -215,7 +215,7 @@ app.post('/register', [
         const userQuery = db.prepare('SELECT username FROM Users WHERE username = $1;');
         userQuery.get(username, function(err, row) {
             if (row) {
-                return done(null, false);
+                return;
             }
         });
 
@@ -227,6 +227,7 @@ app.post('/register', [
         });
 
         console.log(`\nNew user created\n\tEmail: ${email}\n\tUsername: ${username}`);
+        res.send({err: 0, redirectUrl: "/login"});
     }
     else {
         return res.status(400).json({ errors: errors.array() });
@@ -242,13 +243,8 @@ app.get('/login', function(req, res) {
     res.sendFile(__dirname + "/public/user/login.html");
 });
 
-app.post('/login', function(req, res, next) {
-    // passport local authentication
-    passport.authenticate('local', { 
-        successRedirect: '/',
-        failureRedirect: '/login',
-        failureFlash: true 
-    });
+app.post('/login', passport.authenticate('local', { failureRedirect: '/login' }), function(req, res) {
+    res.redirect('/');
 });
 
 
@@ -261,51 +257,70 @@ app.get('/forgot-password', function(req, res) {
 });
 
 app.post('/forgot-password', [
-    body('email').notEmpty()
+    body('username').notEmpty()
 ], function(req, res) {
     const emailOrUsername = req.body.username;
     const emailQuery = db.prepare('SELECT email, username FROM Users WHERE email = $1 OR username = $1');
     emailQuery.get(emailOrUsername, function(err, row) {
         if (err) {
-            return done(err);
+            return;
         }
 
         if (row) {
             const email = row.email;
             const username = row.username;
-            token = crypto.randomBytes(32).toString('hex');
-            bcrypt.hash(token, saltrounds, function(err, hash) {
-                const tokenInsert = db.prepare('INSERT INTO PasswordResetRequests (email, token) VALUES ($1, $2);');
-                tokenInsert.run(row.email, hash);
-                tokenInsert.finalize();
-            });
+            const tokenQuery = db.prepare('SELECT * FROM PasswordResetRequests WHERE username = $1 AND expiryDate > datetime(\'now\') AND used = 0;')
+            tokenQuery.get(username, function(err, row) {
+                if (err) {
+                    return;
+                }
 
-            //TODO send password reset email
+                if (row) {
+                    return;
+                }
+                else {
+                    token = crypto.randomBytes(32).toString('hex');
+                    bcrypt.hash(token, saltrounds, function(err, hash) {
+                        const tokenInsert = db.prepare('INSERT INTO PasswordResetRequests (username, token) VALUES ($1, $2);');
+                        tokenInsert.run(username, hash);
+                        tokenInsert.finalize();
+                    });
+
+                    //TODO send password reset email
+                    
+                    res.sendFile(__dirname + '/public/user/email-sent.html');
+                }
+            });
         }
     });
 });
 
-app.get('/reset-password', [
-], function(req, res) {
-    res.sendFile(__dirname + "/public/user/reset-password.html");
+app.get('/change-password', function(req, res) {
+    res.sendFile(__dirname + '/public/user/change-password.html');
 });
 
-app.post('/reset-password', [
+app.post('/change-password', [
     body('token'),
     body('username'),
-    body('password').isLength({ min: 8 })
+    body('password').isLength({min:8})
 ], function(req, res) {
+    res.sendFile(__dirname, '/public/user/change-password.html');
     const username = req.body.username;
+    const password = req.body.password;
     const token = req.body.token;
     const tokenQuery = db.prepare('SELECT token FROM PasswordResetRequests WHERE username = $1 AND expiryDate > datetime(\'now\') AND used = 0;');
     tokenQuery.get(username, function(err, row) {
         if (err) {
-            return done(err);
+            return;
         }
 
         if (row) {
             bcrypt.compare(token, row.token, function(err, res) {
-                //TODO
+                if (res) {
+                    const updatePassword = db.prepare('UPDATE Users SET password = $1 WHERE username = $2;');
+                    updatePassword.run(password, username);
+                    updatePassword.finalize();
+                }
             });
         }
     });
