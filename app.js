@@ -24,6 +24,7 @@ const passport = require('passport');
 const { contextsKey } = require('express-validator/src/base');
 const LocalStrategy = require('passport-local').Strategy;
 
+app.use(session({secret:'supersecretstring'}));
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(
@@ -55,7 +56,7 @@ passport.serializeUser(function (user, done) {
     return done(null, user.username);
 });
 
-passport.deserializeUser(function(id, done) {
+passport.deserializeUser(function(username, done) {
     const query = db.prepare('SELECT username FROM Users WHERE username = $1;');
     query.get(username, function(err, row) {
         if (!row) {
@@ -108,9 +109,32 @@ app.post("/submitCharacter", [
         const characterAlignment = req.body.characterAlignment;
         console.log(`${characterName}, ${characterRace}, ${characterClass}, ${characterLevel}, ${characterAlignment}`);
 
+        var characterID = null;
         const insert = db.prepare(insertCharacter);
-        insert.run(characterName, characterRace, characterClass, characterLevel, characterAlignment);
+        insert.run(characterName, characterRace, characterClass, characterLevel, characterAlignment, function(err) {
+            if (err) {
+                console.log(err);
+            }
+            else {
+                characterID = this.lastID;
+            }
+        });
         insert.finalize();
+
+        var email = '';
+        const emailQuery = db.prepare('SELECT email FROM Users WHERE username = $1;');
+        emailQuery.get(req.user.username, function(err, row) {
+            if (err) {
+                return;
+            }
+
+            if (row) {
+                email = row.email;
+                const insertUserCharacter = db.prepare('INSERT INTO Users_Characters (email, characterID) VALUES ($1, $2);');
+                insertUserCharacter.run(email, characterID);
+                insertUserCharacter.finalize();
+            }
+        });
 
         const query = db.prepare(selectCharacters);
 
